@@ -13,61 +13,69 @@ import static org.junit.Assert.*;
 import org.hsqldb.cmdline.SqlFile;
 import org.hsqldb.cmdline.SqlToolError;
 
-
 public class HsqlDBTest {
-	private static DataSource myDataSource;
-	private static Connection myConnection ;
-	
-	private DAO myObject;
-	
-	@Before
-	public  void setUp() throws IOException, SqlToolError, SQLException {
-		// On crée la connection vers la base de test "in memory"
-		myDataSource = getDataSource();
-		myConnection = myDataSource.getConnection();
-		// On crée le schema de la base de test
-		executeSQLScript(myConnection, "schema.sql");
-		// On y met des données
-		executeSQLScript(myConnection, "bigtestdata.sql");		
 
-            	myObject = new DAO(myDataSource);
-	}
-	
-	private void executeSQLScript(Connection connexion, String filename)  throws IOException, SqlToolError, SQLException {
-		// On initialise la base avec le contenu d'un fichier de test
-		String sqlFilePath = HsqlDBTest.class.getResource(filename).getFile();
-		SqlFile sqlFile = new SqlFile(new File(sqlFilePath));
+    private static DataSource myDataSource;
+    private static Connection myConnection;
 
-		sqlFile.setConnection(connexion);
-		sqlFile.execute();
-		sqlFile.closeReader();		
-	}
-		
-	@After
-	public void tearDown() throws IOException, SqlToolError, SQLException {
-		myConnection.close(); // La base de données de test est détruite ici
-             	myObject = null; // Pas vraiment utile
+    private DAO myObject;
 
-	}
+    @Before
+    public void setUp() throws IOException, SqlToolError, SQLException {
+        // On crée la connection vers la base de test "in memory"
+        myDataSource = getDataSource();
+        myConnection = myDataSource.getConnection();
+        // On crée le schema de la base de test
+        executeSQLScript(myConnection, "schema.sql");
+        // On y met des données
+        executeSQLScript(myConnection, "bigtestdata.sql");
 
-	@Test
-	public void findExistingCustomer() throws SQLException {
-		String name = myObject.nameOfCustomer(0);
-		assertNotNull("Customer exists, name should not be null", name);
-		assertEquals("Bad name found !", "Steel", name);
-	}
+        myObject = new DAO(myDataSource);
+    }
 
-	@Test
-	public void nonExistingCustomerReturnsNull() throws SQLException {
-		String name = myObject.nameOfCustomer(-1);
-		assertNull("name should be null, customer does not exist !", name);
-	}
+    private void executeSQLScript(Connection connexion, String filename) throws IOException, SqlToolError, SQLException {
+        // On initialise la base avec le contenu d'un fichier de test
+        String sqlFilePath = HsqlDBTest.class.getResource(filename).getFile();
+        SqlFile sqlFile = new SqlFile(new File(sqlFilePath));
 
-	public static DataSource getDataSource() {
-		org.hsqldb.jdbc.JDBCDataSource ds = new org.hsqldb.jdbc.JDBCDataSource();
-		ds.setDatabase("jdbc:hsqldb:mem:testcase;shutdown=true");
-		ds.setUser("sa");
-		ds.setPassword("sa");
-		return ds;
-	}	
+        sqlFile.setConnection(connexion);
+        sqlFile.execute();
+        sqlFile.closeReader();
+    }
+
+    @After
+    public void tearDown() throws IOException, SqlToolError, SQLException {
+        myConnection.close(); // La base de données de test est détruite ici
+        myObject = null; // Pas vraiment utile
+
+    }
+
+    @Test
+    public void findExistingCustomer() throws SQLException {
+        String name = myObject.nameOfCustomer(0);
+        assertNotNull("Customer exists, name should not be null", name);
+        assertEquals("Bad name found !", "Steel", name);
+    }
+
+    @Test
+    public void nonExistingCustomerReturnsNull() throws SQLException {
+        String name = myObject.nameOfCustomer(-1);
+        assertNull("name should be null, customer does not exist !", name);
+    }
+
+    @Test
+    public void createNewProduct() throws SQLException {
+        ProductEntity result = new ProductEntity(50, "new product", 200);
+        myObject.createProduct(result);
+        
+        assertEquals(result, myObject.findProduct(50));
+    }
+    
+    public static DataSource getDataSource() {
+        org.hsqldb.jdbc.JDBCDataSource ds = new org.hsqldb.jdbc.JDBCDataSource();
+        ds.setDatabase("jdbc:hsqldb:mem:testcase;shutdown=true");
+        ds.setUser("sa");
+        ds.setPassword("sa");
+        return ds;
+    }
 }
